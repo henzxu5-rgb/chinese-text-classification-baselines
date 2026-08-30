@@ -40,4 +40,4 @@ git clone https://github.com/Meituan-Dianping/asap.git .\data\external\asap
 
 ## 小样本
 
-`sample/asap_train_sample.csv` 用于观察字段、评论文本与标签，不用于得出总体统计结论，也不能代替完整训练集。小样本的分布可能不代表全体数据。
+`sample/asap_train_sample.csv` 用于观察字段、评论文本与标签，完整统计和模型训练使用官方完整数据。
