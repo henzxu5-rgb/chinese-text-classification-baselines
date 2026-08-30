@@ -1,0 +1,52 @@
+{
+  "model_metrics": {
+    "tfidf": {
+      "accuracy": 0.5757085020242915,
+      "macro_f1": 0.476563997824851,
+      "mean_absolute_error": 0.4807692307692308
+    },
+    "textcnn": {
+      "accuracy": 0.5550607287449393,
+      "macro_f1": 0.43444368978603964,
+      "mean_absolute_error": 0.5066801619433199
+    }
+  },
+  "outcome_counts": {
+    "both_correct": 2173,
+    "tfidf_only_correct": 671,
+    "textcnn_only_correct": 569,
+    "both_wrong": 1527
+  },
+  "per_star": [
+    {
+      "true_star": 1,
+      "examples": 151,
+      "tfidf_correct": 101,
+      "textcnn_correct": 102
+    },
+    {
+      "true_star": 2,
+      "examples": 166,
+      "tfidf_correct": 12,
+      "textcnn_correct": 10
+    },
+    {
+      "true_star": 3,
+      "examples": 784,
+      "tfidf_correct": 223,
+      "textcnn_correct": 140
+    },
+    {
+      "true_star": 4,
+      "examples": 1734,
+      "tfidf_correct": 997,
+      "textcnn_correct": 1025
+    },
+    {
+      "true_star": 5,
+      "examples": 2105,
+      "tfidf_correct": 1511,
+      "textcnn_correct": 1465
+    }
+  ]
+}
