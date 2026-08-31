@@ -13,7 +13,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    mean_absolute_error,
+    precision_recall_fscore_support,
+)
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -23,6 +28,7 @@ DATA_DIR = PROJECT_ROOT / "data" / "raw"
 RESULTS_DIR = PROJECT_ROOT / "results"
 PAD_ID = 0
 UNK_ID = 1
+STAR_LABELS = [0, 1, 2, 3, 4]
 
 
 # 1. 实验设置：所有会影响复现和比较的主要选择集中放在这里。
@@ -136,7 +142,7 @@ def train_one_epoch(
 ) -> float:
     model.train()
     total_loss = 0.0
-    total_examples = 0
+    total_loss_weight = 0.0
 
     for character_ids, true_stars in loader:
         optimizer.zero_grad()
@@ -145,10 +151,14 @@ def train_one_epoch(
         loss.backward()
         optimizer.step()
 
-        total_loss += loss.item() * len(true_stars)
-        total_examples += len(true_stars)
+        if isinstance(loss_function, nn.CrossEntropyLoss) and loss_function.weight is not None:
+            batch_loss_weight = float(loss_function.weight[true_stars].sum())
+        else:
+            batch_loss_weight = float(len(true_stars))
+        total_loss += loss.item() * batch_loss_weight
+        total_loss_weight += batch_loss_weight
 
-    return total_loss / total_examples
+    return total_loss / total_loss_weight
 
 
 @torch.inference_mode()
@@ -157,7 +167,7 @@ def evaluate(
 ) -> tuple[float, np.ndarray, np.ndarray]:
     model.eval()
     total_loss = 0.0
-    total_examples = 0
+    total_loss_weight = 0.0
     all_true_stars: list[np.ndarray] = []
     all_predicted_stars: list[np.ndarray] = []
 
@@ -166,13 +176,17 @@ def evaluate(
         loss = loss_function(star_scores, true_stars)
         predicted_stars = star_scores.argmax(dim=1)
 
-        total_loss += loss.item() * len(true_stars)
-        total_examples += len(true_stars)
+        if isinstance(loss_function, nn.CrossEntropyLoss) and loss_function.weight is not None:
+            batch_loss_weight = float(loss_function.weight[true_stars].sum())
+        else:
+            batch_loss_weight = float(len(true_stars))
+        total_loss += loss.item() * batch_loss_weight
+        total_loss_weight += batch_loss_weight
         all_true_stars.append(true_stars.numpy())
         all_predicted_stars.append(predicted_stars.numpy())
 
     return (
-        total_loss / total_examples,
+        total_loss / total_loss_weight,
         np.concatenate(all_true_stars),
         np.concatenate(all_predicted_stars),
     )
@@ -200,6 +214,43 @@ def make_loader(
     )
 
 
+def make_loss_function(
+    train_labels: torch.Tensor, class_weighting: str
+) -> tuple[nn.Module, torch.Tensor | None]:
+    """按训练集标签决定交叉熵是否对少数类别加权。"""
+    if class_weighting == "none":
+        return nn.CrossEntropyLoss(), None
+
+    # balanced: w_c = N / (类别数 * 该类别训练样本数)。
+    # 因此每个星级在一个 epoch 中的总损失权重大致相同。
+    class_counts = torch.bincount(train_labels, minlength=len(STAR_LABELS)).float()
+    if torch.any(class_counts == 0):
+        raise ValueError("训练集中存在没有样本的星级，无法计算平衡类别权重")
+    class_weights = len(train_labels) / (len(STAR_LABELS) * class_counts)
+    return nn.CrossEntropyLoss(weight=class_weights), class_weights
+
+
+def per_class_metrics(
+    true_stars: np.ndarray, predicted_stars: np.ndarray
+) -> dict[str, dict[str, float | int]]:
+    precision, recall, f1, support = precision_recall_fscore_support(
+        true_stars,
+        predicted_stars,
+        labels=STAR_LABELS,
+        average=None,
+        zero_division=0,
+    )
+    return {
+        str(star + 1): {
+            "precision": float(precision[index]),
+            "recall": float(recall[index]),
+            "f1": float(f1[index]),
+            "support": int(support[index]),
+        }
+        for index, star in enumerate(STAR_LABELS)
+    }
+
+
 # 5. 完整实验：每轮验证并保存验证集 Macro-F1 最好的模型。
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -208,9 +259,29 @@ def main() -> None:
         action="store_true",
         help="只用少量数据训练一轮，先检查完整流程能否运行。",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="控制参数初始化、训练顺序和 Dropout 的随机种子。",
+    )
+    parser.add_argument(
+        "--class-weighting",
+        choices=["none", "balanced"],
+        default="none",
+        help="none 为普通交叉熵；balanced 按训练集类别频率加权。",
+    )
+    parser.add_argument(
+        "--run-name",
+        help="实验结果文件名中的自定义部分；省略时保持原来的结果文件名。",
+    )
     args = parser.parse_args()
 
-    config = Config(epochs=3) if args.smoke_test else Config()
+    config = (
+        Config(epochs=3, random_seed=args.seed)
+        if args.smoke_test
+        else Config(random_seed=args.seed)
+    )
     set_seed(config.random_seed)
 
     train = read_split("train.csv")
@@ -234,7 +305,9 @@ def main() -> None:
     )
 
     model = TextCNN(len(character_to_id), config)
-    loss_function = nn.CrossEntropyLoss()
+    loss_function, class_weights = make_loss_function(
+        train_labels, args.class_weighting
+    )
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=config.learning_rate,
@@ -246,6 +319,12 @@ def main() -> None:
     print(f"vocab size={len(character_to_id)}")
     print(f"train tensor shape={tuple(train_ids.shape)}")
     print(f"model parameters={sum(p.numel() for p in model.parameters())}")
+    print(f"class weighting={args.class_weighting}")
+    if class_weights is not None:
+        print(
+            "class weights="
+            + str({star + 1: round(float(weight), 4) for star, weight in enumerate(class_weights)})
+        )
 
     history: list[dict[str, float | int]] = []
     best_epoch = 0
@@ -285,22 +364,43 @@ def main() -> None:
 
     RESULTS_DIR.mkdir(exist_ok=True)
     mode = "smoke" if args.smoke_test else "full"
+    if args.run_name:
+        result_stem = f"textcnn_{args.run_name}"
+    elif args.class_weighting == "none":
+        # 保持第一阶段默认文件名，供冻结模型评价脚本继续读取。
+        result_stem = f"textcnn_{mode}"
+    else:
+        result_stem = (
+            f"textcnn_{mode}_{args.class_weighting}_seed{config.random_seed}"
+        )
     metrics = {
         "mode": mode,
         "config": asdict(config),
+        "class_weighting": args.class_weighting,
+        "class_weights": (
+            None
+            if class_weights is None
+            else {
+                str(star + 1): float(weight)
+                for star, weight in enumerate(class_weights)
+            }
+        ),
         "best_epoch": best_epoch,
         "best_dev_accuracy": float(accuracy_score(true_stars, predicted_stars)),
         "best_dev_macro_f1": float(
             f1_score(true_stars, predicted_stars, average="macro")
         ),
+        "best_dev_mae": float(mean_absolute_error(true_stars, predicted_stars)),
+        "per_class": per_class_metrics(true_stars, predicted_stars),
         "training_seconds": time.perf_counter() - started,
         "history": history,
     }
-    (RESULTS_DIR / f"textcnn_{mode}_metrics.json").write_text(
+    metrics_path = RESULTS_DIR / f"{result_stem}_metrics.json"
+    metrics_path.write_text(
         json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    torch.save(best_state, RESULTS_DIR / f"textcnn_{mode}_model.pt")
-    if not args.smoke_test:
+    torch.save(best_state, RESULTS_DIR / f"{result_stem}_model.pt")
+    if not args.smoke_test and args.run_name is None:
         pd.DataFrame(
             {
                 "id": dev["id"],
@@ -315,7 +415,7 @@ def main() -> None:
         )
 
     print(f"best epoch={best_epoch}, best dev Macro-F1={best_macro_f1:.4f}")
-    print(f"saved: results/textcnn_{mode}_metrics.json")
+    print(f"saved: {metrics_path.relative_to(PROJECT_ROOT)}")
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ results/dev_predictions.csv
 results/textcnn_dev_predictions.csv
 results/frozen_*_predictions.csv
 results/textcnn_smoke_metrics.json
+results/textcnn_smoke_*_metrics.json
 results/error_analysis_sample.*
 results/error_analysis_candidates.*
 results/error_analysis_assistant_draft.md
