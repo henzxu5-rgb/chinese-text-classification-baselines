@@ -9,7 +9,6 @@
 - `class_weight_test_metrics.json`：已固定模型的类别加权测试集比较；
 - `pretrained_mini_full_metrics.json`：预训练 Transformer 的验证集训练记录和最佳轮次；
 - `pretrained_textcnn_dev_summary.json`：预训练 Transformer 与 TextCNN 的验证集对照汇总；
-- `experiment_log.md`：主要实验记录；
 - `error_analysis.md`：人工错误观察。
 
 模型权重、完整数据和大型逐条预测文件保留在本地，不提交到 Git，可以通过代码重新生成。
