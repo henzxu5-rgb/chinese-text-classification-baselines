@@ -1,0 +1,75 @@
+{
+  "comparison_split": "dev.csv only",
+  "model_metrics": {
+    "textcnn": {
+      "accuracy": 0.5550607287449393,
+      "macro_f1": 0.43444368978603964,
+      "mean_absolute_error": 0.5066801619433199
+    },
+    "pretrained": {
+      "accuracy": 0.5617408906882592,
+      "macro_f1": 0.48324706801938466,
+      "mean_absolute_error": 0.49008097165991904
+    }
+  },
+  "outcome_counts": {
+    "both_correct": 2123,
+    "textcnn_only_correct": 619,
+    "pretrained_only_correct": 652,
+    "both_wrong": 1546
+  },
+  "per_star": [
+    {
+      "true_star": 1,
+      "examples": 151,
+      "textcnn_precision": 0.5604395604395604,
+      "textcnn_recall": 0.6754966887417219,
+      "textcnn_f1": 0.6126126126126126,
+      "pretrained_precision": 0.689922480620155,
+      "pretrained_recall": 0.5894039735099338,
+      "pretrained_f1": 0.6357142857142857
+    },
+    {
+      "true_star": 2,
+      "examples": 166,
+      "textcnn_precision": 0.3448275862068966,
+      "textcnn_recall": 0.060240963855421686,
+      "textcnn_f1": 0.10256410256410256,
+      "pretrained_precision": 0.4423076923076923,
+      "pretrained_recall": 0.13855421686746988,
+      "pretrained_f1": 0.21100917431192662
+    },
+    {
+      "true_star": 3,
+      "examples": 784,
+      "textcnn_precision": 0.4794520547945205,
+      "textcnn_recall": 0.17857142857142858,
+      "textcnn_f1": 0.26022304832713755,
+      "pretrained_precision": 0.4172077922077922,
+      "pretrained_recall": 0.3278061224489796,
+      "pretrained_f1": 0.36714285714285716
+    },
+    {
+      "true_star": 4,
+      "examples": 1734,
+      "textcnn_precision": 0.45840787119856885,
+      "textcnn_recall": 0.591118800461361,
+      "textcnn_f1": 0.5163727959697733,
+      "pretrained_precision": 0.47438855560682974,
+      "pretrained_recall": 0.5928489042675894,
+      "pretrained_f1": 0.5270443476031786
+    },
+    {
+      "true_star": 5,
+      "examples": 2105,
+      "textcnn_precision": 0.6656065424806906,
+      "textcnn_recall": 0.6959619952494062,
+      "textcnn_f1": 0.6804458894565723,
+      "pretrained_precision": 0.6973684210526315,
+      "pretrained_recall": 0.6546318289786224,
+      "pretrained_f1": 0.6753246753246753
+    }
+  ],
+  "sample_file": "results\\pretrained_textcnn_disagreement_sample.csv",
+  "note": "The sample records the Transformer's retained input tokens, not a claim about semantic understanding."
+}

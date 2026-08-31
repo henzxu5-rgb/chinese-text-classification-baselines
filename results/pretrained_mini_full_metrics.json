@@ -1,0 +1,47 @@
+{
+  "mode": "full",
+  "purpose": "Train on the complete train split and select an epoch by development Macro-F1; the test split is deliberately unused.",
+  "model_name": "uer/roberta-mini-wwm-chinese-cluecorpussmall",
+  "input_strategy": "short: [CLS] text [SEP]; long: [CLS] head [SEP] tail [SEP]",
+  "config": {
+    "max_length": 128,
+    "batch_size": 16,
+    "epochs": 3,
+    "learning_rate": 2e-05,
+    "weight_decay": 0.01,
+    "random_seed": 42,
+    "smoke_train_rows": 512,
+    "smoke_dev_rows": 256
+  },
+  "device": "cpu",
+  "train_truncated_reviews": 36777,
+  "dev_truncated_reviews": 4926,
+  "best_epoch": 3,
+  "best_dev_accuracy": 0.5617408906882592,
+  "best_dev_macro_f1": 0.48324706801938466,
+  "best_dev_mae": 0.49008097165991904,
+  "training_seconds": 3076.924518500018,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.0446,
+      "dev_loss": 0.9734,
+      "dev_accuracy": 0.5449,
+      "dev_macro_f1": 0.4596
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.9471,
+      "dev_loss": 0.9608,
+      "dev_accuracy": 0.5549,
+      "dev_macro_f1": 0.4654
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.9183,
+      "dev_loss": 0.9522,
+      "dev_accuracy": 0.5617,
+      "dev_macro_f1": 0.4832
+    }
+  ]
+}

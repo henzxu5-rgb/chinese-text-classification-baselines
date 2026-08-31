@@ -11,6 +11,11 @@ results/textcnn_dev_predictions.csv
 results/frozen_*_predictions.csv
 results/textcnn_smoke_metrics.json
 results/textcnn_smoke_*_metrics.json
+results/pretrained_mini_smoke_metrics.json
+results/pretrained_mini_smoke_model.pt
+results/pretrained_mini_full_model.pt
+results/pretrained_mini_full_dev_predictions.csv
+results/pretrained_textcnn_disagreement_sample.csv
 results/error_analysis_sample.*
 results/error_analysis_candidates.*
 results/error_analysis_assistant_draft.md

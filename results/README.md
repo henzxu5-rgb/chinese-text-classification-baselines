@@ -7,6 +7,8 @@
 - `textcnn_class_weight_*_metrics.json`：三个随机种子下普通/加权 TextCNN 的验证集结果；
 - `class_weight_experiment_summary.json`：类别加权验证集结果汇总；
 - `class_weight_test_metrics.json`：已固定模型的类别加权测试集比较；
+- `pretrained_mini_full_metrics.json`：预训练 Transformer 的验证集训练记录和最佳轮次；
+- `pretrained_textcnn_dev_summary.json`：预训练 Transformer 与 TextCNN 的验证集对照汇总；
 - `experiment_log.md`：主要实验记录；
 - `error_analysis.md`：人工错误观察。
 
